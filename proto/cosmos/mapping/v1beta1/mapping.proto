@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package cosmos.mapping.v1beta1;
+
+import "gogoproto/gogo.proto";
+import "google/api/annotations.proto";
+
+option go_package = "github.com/cosmos/cosmos-sdk/x/mapping/types;types";
+option (gogoproto.marshaler_all) = true;
+option (gogoproto.equal_all)     = true;
+
+message MsgRegisterDevice {
+  string creator   = 1 [(gogoproto.moretags) = "yaml:\"creator\""];
+  string device_id = 2 [(gogoproto.moretags) = "yaml:\"device_id\""];
+  string address   = 3 [(gogoproto.moretags) = "yaml:\"address\""];
+}
+
+message MsgRegisterDeviceResponse {
+  string result = 1;
+}
+
+service Msg {
+  rpc RegisterDevice(MsgRegisterDevice) returns (MsgRegisterDeviceResponse) {
+    option (google.api.http) = {
+      post: "/cosmos/register-device"
+      body: "*"
+    };
+  }
+}

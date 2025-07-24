@@ -1,0 +1,10 @@
+syntax = "proto3";
+package cosmos.reward.v1beta1;
+
+option go_package = "github.com/cosmos/cosmos-sdk/x/reward/types";
+
+// Genesis state for the reward module
+message GenesisState {
+  // 예: 초기 보상 상태
+  repeated string initial_addresses = 1;
+}

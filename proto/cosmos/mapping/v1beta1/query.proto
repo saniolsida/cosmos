@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package cosmos.mapping.v1beta1;
+
+import "gogoproto/gogo.proto";
+import "google/api/annotations.proto";
+
+option go_package = "github.com/cosmos/cosmos-sdk/x/mapping/types;types";
+option (gogoproto.marshaler_all) = true;
+option (gogoproto.equal_all)     = true;
+
+// gRPC Query Service
+service Query {
+  // device_id를 기반으로 등록된 address 반환
+  rpc GetAddressFromDeviceID(QueryGetAddressFromDeviceIDRequest)
+      returns (QueryGetAddressFromDeviceIDResponse) {
+    option (google.api.http).get = "/cosmos/address/{device_id}";
+  }
+}
+
+// 요청 메시지: device_id를 기반으로 조회
+message QueryGetAddressFromDeviceIDRequest {
+  string device_id = 1 [(gogoproto.moretags) = 'yaml:"device_id"'];
+}
+
+// 응답 메시지: address 문자열 반환 (AccAddress bech32)
+message QueryGetAddressFromDeviceIDResponse {
+  string address = 1 [(gogoproto.moretags) = 'yaml:"address"'];
+}

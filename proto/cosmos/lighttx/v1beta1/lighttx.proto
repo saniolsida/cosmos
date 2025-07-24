@@ -1,0 +1,68 @@
+syntax = "proto3";
+
+package cosmos.lighttx.v1beta1;
+
+import "gogoproto/gogo.proto";
+import "google/api/annotations.proto";
+
+option go_package = "github.com/cosmos/cosmos-sdk/x/light_tx/types;types";
+// option (gogoproto.marshaler_all) = true;
+// option (gogoproto.equal_all) = true;
+option (gogoproto.goproto_getters_all) = false;
+
+// 발전량 데이터
+message SolarData {
+  string device_id    = 1;
+  string timestamp    = 2;
+  double power        = 3;
+  double voltage      = 4;
+  double power_output = 5;
+}
+
+// REC 메타데이터
+message RECMeta {
+  string facility_id           = 1;
+  string facility_name         = 2;
+  string location              = 3;
+  string technology_type       = 4;
+  string capacity_mw           = 5;
+  string registration_date     = 6;
+  string certified_id          = 7;
+  string issue_data            = 8;
+  string generation_start_date = 9;
+  string generation_end_date   = 10;
+  string measured_volume_MWh   = 11;
+  string retired_date          = 12;
+  string retirement_purpose    = 13;
+  string status                = 14;
+  string timestamp             = 15;
+}
+
+// 트랜잭션 메시지
+message MsgSendLightTx {
+  string creator   = 1;
+
+  oneof payload {
+    SolarData original = 2;
+    RECMeta   rec      = 3;
+  }
+
+  string hash      = 4;
+  string signature = 5;
+  string pubkey    = 6;
+}
+
+// 응답
+message MsgSendLightTxResponse {
+  string result = 1;
+}
+
+// gRPC 서비스
+service Msg {
+  rpc SendLightTx(MsgSendLightTx) returns (MsgSendLightTxResponse) {
+    option (google.api.http) = {
+      post: "/cosmos/lighttx/v1beta1/send-light-tx"
+      body: "*"
+    };
+  }
+}

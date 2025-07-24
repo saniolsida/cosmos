@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package cosmos.lighttx.v1beta1;
+
+option go_package = "github.com/cosmos/cosmos-sdk/x/light_tx/types";
+
+// GenesisState defines the module's genesis state.
+message GenesisState {
+  // 아무 필드 없어도 괜찮습니다.
+}

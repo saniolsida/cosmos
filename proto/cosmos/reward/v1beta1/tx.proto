@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package cosmos.reward.v1beta1;
+import "google/api/annotations.proto";
+
+option go_package = "github.com/cosmos/cosmos-sdk/x/reward/types";
+
+// Msg service
+service Msg {
+  rpc RewardSolarPower(MsgRewardSolarPower) returns (MsgRewardSolarPowerResponse) {
+    option (google.api.http).post = "/cosmos/reward/v1beta1/reward_solar_power";
+    option (google.api.http).body = "*";
+  }
+}
+
+// 메시지 정의
+message MsgRewardSolarPower {
+  string creator = 1;
+  string address = 2;
+  string amount = 3; // ← 수정: power → amount
+}
+
+message MsgRewardSolarPowerResponse {}

@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package cosmos.mapping.v1beta1;
+
+option go_package = "github.com/cosmos/cosmos-sdk/x/mapping/types";
+
+// 디바이스 매핑 정보
+message DeviceMapping {
+  string device_id = 1;
+  string address = 2;
+}
+
+// 제네시스 상태
+message GenesisState {
+  repeated DeviceMapping device_mappings = 1;
+}

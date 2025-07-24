@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -20,6 +21,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/keys"
 	"github.com/cosmos/cosmos-sdk/client/rpc"
+
+	// fullnodebridge "github.com/cosmos/cosmos-sdk/fullnode_bridge/consumer"
 	"github.com/cosmos/cosmos-sdk/server"
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
 	"github.com/cosmos/cosmos-sdk/simapp"
@@ -155,7 +158,19 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig) {
 	)
 
 	a := appCreator{encodingConfig}
-	server.AddCommands(rootCmd, simapp.DefaultNodeHome, a.newApp, a.appExport, addModuleInitFlags)
+	// server.AddCommands(rootCmd, simapp.DefaultNodeHome, a.newApp, a.appExport, addModuleInitFlags)
+	server.AddCommands(rootCmd, simapp.DefaultNodeHome, a.newApp, a.appExport, func(startCmd *cobra.Command) {
+		// 기존 모듈 초기화 플래그 추가
+		addModuleInitFlags(startCmd)
+
+		// ⬇️ 여기에 Kafka consumer 실행 로직을 삽입
+		startCmd.PreRunE = func(cmd *cobra.Command, args []string) error {
+			fmt.Println("Operate Kafka consumer")
+			// go fullnodebridge.StartSolarKafkaConsumer() // 태양열 발전량 데이터 토픽
+			// go fullnodebridge.StartVoteMemberConsumer() // 투표 멤버 토픽
+			return nil
+		}
+	})
 
 	// add keybase, auxiliary RPC, query, and tx child commands
 	rootCmd.AddCommand(

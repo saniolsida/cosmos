@@ -84,6 +84,26 @@ import (
 	upgradekeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 
+	//mymodule
+	mymodule "github.com/cosmos/cosmos-sdk/x/mymodule"
+	mymodulekeeper "github.com/cosmos/cosmos-sdk/x/mymodule/keeper"
+	mymoduletypes "github.com/cosmos/cosmos-sdk/x/mymodule/types"
+
+	//light tx
+	lighttxmodule "github.com/cosmos/cosmos-sdk/x/light_tx"
+	lighttxkeeper "github.com/cosmos/cosmos-sdk/x/light_tx/keeper"
+	lighttxtypes "github.com/cosmos/cosmos-sdk/x/light_tx/types"
+
+	//mapping
+	mappingmodule "github.com/cosmos/cosmos-sdk/x/mapping"
+	mappingkeeper "github.com/cosmos/cosmos-sdk/x/mapping/keeper"
+	mappingtypes "github.com/cosmos/cosmos-sdk/x/mapping/types"
+
+	//reward
+	rewardmodule "github.com/cosmos/cosmos-sdk/x/reward"
+	rewardkeeper "github.com/cosmos/cosmos-sdk/x/reward/keeper"
+	rewardtypes "github.com/cosmos/cosmos-sdk/x/reward/types"
+
 	// unnamed import of statik for swagger UI support
 	_ "github.com/cosmos/cosmos-sdk/client/docs/statik"
 )
@@ -98,6 +118,10 @@ var (
 	// non-dependant module elements, such as codec registration
 	// and genesis verification.
 	ModuleBasics = module.NewBasicManager(
+
+		//mymodule
+		mymodule.AppModuleBasic{},
+
 		auth.AppModuleBasic{},
 		genutil.AppModuleBasic{},
 		bank.AppModuleBasic{},
@@ -116,6 +140,12 @@ var (
 		evidence.AppModuleBasic{},
 		authzmodule.AppModuleBasic{},
 		vesting.AppModuleBasic{},
+		//light_tx
+		lighttxmodule.AppModuleBasic{},
+		//mapping
+		mappingmodule.AppModuleBasic{},
+		//reward
+		rewardmodule.AppModuleBasic{},
 	)
 
 	// module account permissions
@@ -126,6 +156,7 @@ var (
 		stakingtypes.BondedPoolName:    {authtypes.Burner, authtypes.Staking},
 		stakingtypes.NotBondedPoolName: {authtypes.Burner, authtypes.Staking},
 		govtypes.ModuleName:            {authtypes.Burner},
+		rewardtypes.ModuleName:         {authtypes.Minter},
 	}
 )
 
@@ -166,6 +197,7 @@ type SimApp struct {
 	EvidenceKeeper   evidencekeeper.Keeper
 	FeeGrantKeeper   feegrantkeeper.Keeper
 
+	MymoduleKeeper mymodule.Keeper
 	// the module manager
 	mm *module.Manager
 
@@ -174,6 +206,15 @@ type SimApp struct {
 
 	// module configurator
 	configurator module.Configurator
+
+	//lighttx
+	LightTxKeeper lighttxkeeper.Keeper
+
+	//mapping
+	MappingKeeper mappingkeeper.Keeper
+
+	//reward
+	RewardKeeper rewardkeeper.Keeper
 }
 
 func init() {
@@ -207,7 +248,12 @@ func NewSimApp(
 		govtypes.StoreKey, paramstypes.StoreKey, upgradetypes.StoreKey, feegrant.StoreKey,
 		evidencetypes.StoreKey, capabilitytypes.StoreKey,
 		authzkeeper.StoreKey,
+		mymoduletypes.StoreKey, // ✅ 반드시 포함
+		lighttxtypes.ModuleName,
+		mappingtypes.StoreKey,
+		rewardtypes.StoreKey,
 	)
+
 	tkeys := sdk.NewTransientStoreKeys(paramstypes.TStoreKey)
 	// NOTE: The testingkey is just mounted for testing purposes. Actual applications should
 	// not include this key.
@@ -224,7 +270,14 @@ func NewSimApp(
 		memKeys:           memKeys,
 	}
 
+	app.LightTxKeeper = lighttxkeeper.NewKeeper(appCodec, keys[lighttxtypes.ModuleName])
+
+	app.MappingKeeper = mappingkeeper.NewKeeper(appCodec, keys[mappingtypes.StoreKey], app.BaseApp.Logger())
+
 	app.ParamsKeeper = initParamsKeeper(appCodec, legacyAmino, keys[paramstypes.StoreKey], tkeys[paramstypes.TStoreKey])
+
+	//mymodule
+	app.MymoduleKeeper = mymodulekeeper.NewKeeper(keys[mymoduletypes.StoreKey])
 
 	// set the BaseApp's parameter store
 	bApp.SetParamStore(app.ParamsKeeper.Subspace(baseapp.Paramspace).WithKeyTable(paramskeeper.ConsensusParamsKeyTable()))
@@ -241,6 +294,10 @@ func NewSimApp(
 	app.BankKeeper = bankkeeper.NewBaseKeeper(
 		appCodec, keys[banktypes.StoreKey], app.AccountKeeper, app.GetSubspace(banktypes.ModuleName), app.ModuleAccountAddrs(),
 	)
+
+	//reward
+	app.RewardKeeper = rewardkeeper.NewKeeper(appCodec, keys[rewardtypes.StoreKey], app.BankKeeper, app.AccountKeeper)
+
 	stakingKeeper := stakingkeeper.NewKeeper(
 		appCodec, keys[stakingtypes.StoreKey], app.AccountKeeper, app.BankKeeper, app.GetSubspace(stakingtypes.ModuleName),
 	)
@@ -307,6 +364,17 @@ func NewSimApp(
 			app.AccountKeeper, app.StakingKeeper, app.BaseApp.DeliverTx,
 			encodingConfig.TxConfig,
 		),
+		//mymodule
+		mymodule.NewAppModule(app.MymoduleKeeper),
+
+		//light tx
+		lighttxmodule.NewAppModule(appCodec, app.LightTxKeeper),
+
+		//mapping
+		mappingmodule.NewAppModule(app.MappingKeeper),
+
+		rewardmodule.NewAppModule(app.RewardKeeper, app.AccountKeeper),
+
 		auth.NewAppModule(appCodec, app.AccountKeeper, authsims.RandomGenesisAccounts),
 		vesting.NewAppModule(app.AccountKeeper, app.BankKeeper),
 		bank.NewAppModule(appCodec, app.BankKeeper, app.AccountKeeper),
@@ -335,6 +403,11 @@ func NewSimApp(
 		authtypes.ModuleName, banktypes.ModuleName, govtypes.ModuleName, crisistypes.ModuleName, genutiltypes.ModuleName,
 		authz.ModuleName, feegrant.ModuleName,
 		paramstypes.ModuleName, vestingtypes.ModuleName,
+
+		mymoduletypes.ModuleName, // ✅ 이거 누락되면 panic 발생
+		lighttxtypes.ModuleName,
+		mappingtypes.ModuleName,
+		rewardtypes.ModuleName,
 	)
 	app.mm.SetOrderEndBlockers(
 		crisistypes.ModuleName, govtypes.ModuleName, stakingtypes.ModuleName,
@@ -343,6 +416,11 @@ func NewSimApp(
 		genutiltypes.ModuleName, evidencetypes.ModuleName, authz.ModuleName,
 		feegrant.ModuleName,
 		paramstypes.ModuleName, upgradetypes.ModuleName, vestingtypes.ModuleName,
+
+		mymoduletypes.ModuleName,
+		lighttxtypes.ModuleName,
+		mappingtypes.ModuleName,
+		rewardtypes.ModuleName,
 	)
 
 	// NOTE: The genutils module must occur after staking so that pools are
@@ -356,6 +434,11 @@ func NewSimApp(
 		genutiltypes.ModuleName, evidencetypes.ModuleName, authz.ModuleName,
 		feegrant.ModuleName,
 		paramstypes.ModuleName, upgradetypes.ModuleName, vestingtypes.ModuleName,
+
+		mymoduletypes.ModuleName,
+		lighttxtypes.ModuleName,
+		mappingtypes.ModuleName,
+		rewardtypes.ModuleName,
 	)
 
 	// Uncomment if you want to set a custom migration order here.
