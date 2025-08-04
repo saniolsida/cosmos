@@ -22,7 +22,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/keys"
 	"github.com/cosmos/cosmos-sdk/client/rpc"
 
-	// fullnodebridge "github.com/cosmos/cosmos-sdk/fullnode_bridge/consumer"
+	fullnodebridge "github.com/cosmos/cosmos-sdk/fullnode_bridge/consumer"
 	"github.com/cosmos/cosmos-sdk/server"
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
 	"github.com/cosmos/cosmos-sdk/simapp"
@@ -166,8 +166,11 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig) {
 		// ⬇️ 여기에 Kafka consumer 실행 로직을 삽입
 		startCmd.PreRunE = func(cmd *cobra.Command, args []string) error {
 			fmt.Println("Operate Kafka consumer")
-			// go fullnodebridge.StartSolarKafkaConsumer() // 태양열 발전량 데이터 토픽
-			// go fullnodebridge.StartVoteMemberConsumer() // 투표 멤버 토픽
+			// 카프카 연동 시작
+			go fullnodebridge.StartSolarKafkaConsumer()
+			go fullnodebridge.StartAccountConsumer()
+			go fullnodebridge.StartVoteMemberConsumer()
+			go fullnodebridge.StartDeviceAddressConsumer()
 			return nil
 		}
 	})

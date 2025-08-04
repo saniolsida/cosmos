@@ -24,28 +24,31 @@ func CmdSendLightTx() *cobra.Command {
 
 			var payload interface{}
 
-			if len(args) == 8 {
+			if len(args) == 6 {
 				// SolarData 전송
-				power, err := strconv.ParseFloat(args[2], 64)
+				totalEnergy, err := strconv.ParseFloat(args[2], 64)
 				if err != nil {
-					return fmt.Errorf("invalid power: %v", err)
+					return fmt.Errorf("invalid total_energy: %v", err)
 				}
-				voltage, err := strconv.ParseFloat(args[3], 64)
+
+				lat, err := strconv.ParseFloat(args[3], 64)
 				if err != nil {
-					return fmt.Errorf("invalid voltage: %v", err)
+					return fmt.Errorf("invalid latitude: %v", err)
 				}
-				powerOutput, err := strconv.ParseFloat(args[4], 64)
+				lon, err := strconv.ParseFloat(args[4], 64)
 				if err != nil {
-					return fmt.Errorf("invalid power_output: %v", err)
+					return fmt.Errorf("invalid longitude: %v", err)
 				}
 
 				payload = &lighttype.MsgSendLightTx_Original{
 					Original: &lighttype.SolarData{
 						DeviceId:    args[0],
 						Timestamp:   args[1],
-						Power:       power,
-						Voltage:     voltage,
-						PowerOutput: powerOutput,
+						TotalEnergy: totalEnergy,
+						Location: &lighttype.Location{
+							Latitude:   lat,
+							Longitutde: lon,
+						},
 					},
 				}
 			} else if len(args) >= 13 {

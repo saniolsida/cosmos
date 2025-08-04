@@ -6,17 +6,20 @@ import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
 
 option go_package = "github.com/cosmos/cosmos-sdk/x/light_tx/types;types";
-// option (gogoproto.marshaler_all) = true;
-// option (gogoproto.equal_all) = true;
 option (gogoproto.goproto_getters_all) = false;
+
+// 위치 정보
+message Location {
+  double latitude   = 1;
+  double longitutde = 2;
+}
 
 // 발전량 데이터
 message SolarData {
   string device_id    = 1;
   string timestamp    = 2;
-  double power        = 3;
-  double voltage      = 4;
-  double power_output = 5;
+  double total_energy = 3;
+  Location location   = 4;
 }
 
 // REC 메타데이터
@@ -40,7 +43,7 @@ message RECMeta {
 
 // 트랜잭션 메시지
 message MsgSendLightTx {
-  string creator   = 1;
+  string creator = 1;
 
   oneof payload {
     SolarData original = 2;
@@ -52,7 +55,7 @@ message MsgSendLightTx {
   string pubkey    = 6;
 }
 
-// 응답
+// 응답 메시지
 message MsgSendLightTxResponse {
   string result = 1;
 }

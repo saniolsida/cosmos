@@ -1,11 +1,15 @@
 package types
 
 type SolarData struct {
-	DeviceID    string  `json:"device_id"`
-	Timestamp   string  `json:"timestamp"`
-	Power       float64 `json:"power"`
-	Voltage     float64 `json:"voltage"`
-	PowerOutput float64 `json:"power_output"`
+	DeviceID    string   `json:"device_id"`
+	Timestamp   string   `json:"timestamp"`
+	TotalEnergy float64  `json:"total_energy"`
+	Location    Location `json:"location"`
+}
+
+type Location struct {
+	Latitude   float64 `json:"latitude"`
+	Longitutde float64 `json:"longitutde"`
 }
 
 type LightTxMessage struct {
@@ -17,7 +21,7 @@ type LightTxMessage struct {
 }
 
 type RECMeta struct {
-	FacilityId       string `json:"facility_id"`
+	FacilityID       string `json:"facility_id"`
 	FacilityName     string `json:"facility_name"`
 	Location         string `json:"location"`
 	TechnologyType   string `json:"technology_type"`   // 발전원
@@ -35,6 +39,11 @@ type RECMeta struct {
 	Timestamp           string `json:"timestamp"`
 }
 
+type DeviceToAddressMessage struct {
+	DeviceID string `json:"device_id"`
+	Address  string `json:"address"`
+}
+
 type AuthMessage struct {
-	ID string `json:"user_id"`
+	Address string `json:"user_address"`
 }

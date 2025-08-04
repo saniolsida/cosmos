@@ -18,9 +18,7 @@ func BroadcastLightTx(msg types.LightTxMessage) (string, error) {
 			"tx", "lighttx", "send-light-tx",
 			msg.Original.DeviceID,
 			msg.Original.Timestamp,
-			fmt.Sprintf("%.2f", msg.Original.Power),
-			fmt.Sprintf("%.2f", msg.Original.Voltage),
-			fmt.Sprintf("%.2f", msg.Original.PowerOutput),
+			fmt.Sprintf("%.2f", msg.Original.TotalEnergy),
 			msg.Hash,
 			msg.Signature,
 			msg.Pubkey,
@@ -28,8 +26,8 @@ func BroadcastLightTx(msg types.LightTxMessage) (string, error) {
 	} else if msg.REC != nil {
 		// RECMeta 전송
 		args = []string{
-			"tx", "lighttx", "send-rec-tx",
-			msg.REC.FacilityId,
+			"tx", "lighttx", "send-light-tx",
+			msg.REC.FacilityID,
 			msg.REC.FacilityName,
 			msg.REC.Location,
 			msg.REC.TechnologyType,
@@ -83,9 +81,9 @@ func BroadcastLightTx(msg types.LightTxMessage) (string, error) {
 // SendStakeToAddress.go
 func SendStakeToAddress(toAddr string) (string, error) {
 	// 예시 CLI 호출
-	cmd := exec.Command("simd", "tx", "bank", "send",
-		"alice", "cosmos1n4q3249rl4rh7vqwve4rxdxpa5yeg5dkf32k7f", "1stake",
-		"--fees", "200stake",
+	cmd := exec.Command("/root/cosmos/cosmos-sdk/build/simd", "tx", "bank", "send",
+		"alice", toAddr, "1stake",
+		"--fees", "0.01stake",
 		"--chain-id", "learning-chain-1",
 		"--home", "/root/cosmos/cosmos-sdk/private/.simapp",
 		"--yes", "--keyring-backend", "test", "--broadcast-mode", "sync")
@@ -94,15 +92,31 @@ func SendStakeToAddress(toAddr string) (string, error) {
 	return string(out), err
 }
 
+func QueryBalance(address string) (string, error) {
+	// simd CLI를 통한 잔고 조회
+	cmd := exec.Command("/root/cosmos/cosmos-sdk/build/simd", "query", "bank", "balances", address,
+		"--node", "tcp://localhost:26657", // RPC 노드 주소 (필요 시 수정 가능)
+		"--home", "/root/cosmos/cosmos-sdk/private/.simapp",
+		"--output", "json")
+
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return "", fmt.Errorf("잔고 조회 실패: %v\n출력: %s", err, string(out))
+	}
+	return string(out), nil
+}
+
 func SendRewardTx(toAddr string, power float64) (string, error) {
 	// 발전량이 0 이하이면 트랜잭션 안 보냄
 	if power <= 0 {
-		return "", fmt.Errorf("보상할 발전량이 없습니다")
+		return "", fmt.Errorf("[Kafka: reward] 보상할 발전량이 없습니다")
 	}
 
 	// 소수점 버림
 	amount := int64(power)
 	amountStr := strconv.FormatInt(amount, 10)
+
+	fmt.Printf("Kafka: [reward] 보상 트랜잭션 준비 중: 주소=%s, 발전량=%.2f → 지급액=%dstake\n", toAddr, power, amount)
 
 	// 트랜잭션 실행 명령
 	cmd := exec.Command("/root/cosmos/cosmos-sdk/build/simd", "tx", "reward", "reward-solar-power",
@@ -110,12 +124,19 @@ func SendRewardTx(toAddr string, power float64) (string, error) {
 		"--from", "alice",
 		"--chain-id", "learning-chain-1",
 		"--home", "/root/cosmos/cosmos-sdk/private/.simapp",
-		"--fees", "0.01stake",
 		"--gas", "auto",
 		"--yes",
 		"--keyring-backend", "test",
 		"--broadcast-mode", "sync")
 
 	out, err := cmd.CombinedOutput()
-	return string(out), err
+	output := string(out)
+
+	if err != nil {
+		fmt.Println("[Kafka: reward] 트랜잭션 전송 실패:", err)
+		fmt.Println("[Kafka: reward] 출력 내용:", output)
+		return output, err
+	}
+
+	return output, nil
 }
